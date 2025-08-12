@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from django.core.validators import ValidationError
+from rest_framework.validators import ValidationError
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
@@ -7,11 +7,11 @@ from .models import CustomUser
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(max_length=15, write_only=True)
+    confirm_password = serializers.CharField(max_length=15, write_only=True)
     class Meta:
-        password = serializers.CharField(max_length=15)
-        confirm_password = serializers.CharField(max_length=15)
         model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'address', 'age', 'password']
+        fields = ['username', 'first_name', 'last_name', 'address', 'age', 'password', 'confirm_password']
 
 
     def validate(self, data):
@@ -32,7 +32,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             age = validated_data['age'],
             address = validated_data['address']
         )
+        token = Token.objects.create(user=user)
         user.set_password(validated_data['password'])
+        user.token = token.key
         user.save()
-        Token.objects.create(user=user)
+
         return user
